@@ -72,8 +72,75 @@ $(document).ready(function() {
 function setupEventStream() {
   eventSource = new EventSource(BACKEND_URL + '/networks/' + networkname);
 
-  eventSource.addEventListener("simupdate", function(e) {
-    updateVisualisationWithClass(JSON.parse(e.data));
+  eventSource.addEventListener("network", function(e) {
+    var event = JSON.parse(e.data);
+
+    var graph = {
+      add:     [],
+      remove:  [],
+      message: []
+    };
+
+    switch(event.type) {
+
+      case "node":
+        if (event.control) {
+          return;
+        }
+
+        var el = {
+          group: "nodes",
+          data: {
+            id: event.node.config.id,
+            up: event.node.up
+          },
+          control: event.control
+        };
+
+        if (event.node.up) {
+          graph.add.push(el);
+        } else {
+          graph.remove.push(el);
+        }
+
+        break;
+
+      case "conn":
+        var el = {
+          group: "edges",
+          data: {
+            id:     event.conn.one + "-" + event.conn.other,
+            source: event.conn.one,
+            target: event.conn.other,
+            up:     event.conn.up
+          },
+          control: event.control
+        };
+
+        if (event.conn.up) {
+          graph.add.push(el);
+        } else {
+          graph.remove.push(el);
+        }
+
+        break;
+
+      case "msg":
+        graph.message.push({
+          group: "msgs",
+          data: {
+            id:     event.msg.one + "-" + event.msg.other,
+            source: event.msg.one,
+            target: event.msg.other,
+            up:     event.msg.up
+          },
+          control: event.control
+        });
+
+        break;
+
+    }
+    updateVisualisationWithClass(graph);
   });
 
   eventSource.onerror = function() {
