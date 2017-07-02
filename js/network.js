@@ -10,7 +10,7 @@ var defaultSim            = "default";
 var selectedSim           = defaultSim;
 
 var eventSource           = null;
-var eventHistory          = null; 
+var eventHistory          = null;
 var currHistoryIndex      = 0;
 var time_elapsed          = new Date();
 var timemachine           = false;
@@ -58,7 +58,7 @@ function setVisualisationFrame() {
     g = d.getElementsByTagName('body')[0],
     x = w.innerWidth || e.clientWidth || g.clientWidth,
     y = w.innerHeight|| e.clientHeight|| g.clientHeight;
-  
+
   var viswidth = x * 60 / 100;
   var visheight = y * 85 / 100;
   $("#network-visualisation").attr("width", viswidth);
@@ -157,7 +157,7 @@ function setupEventStream() {
   });
 
   eventSource.onopen = function() {
-    startViz(); 
+    startViz();
   };
 
   eventSource.onerror = function() {
@@ -194,7 +194,7 @@ function clearViz() {
   $("#timemachine-visualisation").hide();
   $("#network-visualisation").show();
 }
-  
+
 
 function startViz(){
   $.post(BACKEND_URL + "/mock/" + selectedSim).then(
@@ -242,7 +242,8 @@ function initializeServer(){
 function startSim() {
   $(".display .label").text("Connecting with backend...");
   setupEventStream();
-  //loadExistingNodes();
+  loadExistingNodes();
+  loadExistingConnections();
 }
 
 function stopNetwork() {
@@ -250,7 +251,7 @@ function stopNetwork() {
   $(".display .label").text("Stop network: waiting for backend...");
   $("#stop").addClass("stale");
   $("#power").addClass("stale");
-  
+
   $.post(BACKEND_URL + "/stop").then(
     function(d) {
       eventSource.close();
@@ -285,18 +286,17 @@ function loadExistingNodes() {
         removeLinks: [],
         message: []
       };
-      
+
       for (var i=0; i<d.length; i++) {
         var el = {
           id: d[i].id,
           name:d[i].name,
           up: true,
-          control: false 
+          control: false
         };
         graph.newNodes.push(el);
       }
       console.log("Successfully loaded existing node list");
-      //console.log(graph.add);
       updateVisualisationWithClass(graph);
     },
     function(d) {
@@ -365,13 +365,13 @@ function saveSnapshot(snapshot) {
   var file = new Blob([snapshot], {type: "text/plain"});
   a.href = URL.createObjectURL(file);
   a.download = "Snapshot_" + Date.now() + ".js";
-  a.click();  
+  a.click();
 }
 
 function showConnectionGraph() {
   d3.select("#chord-diagram").selectAll("*").remove();
   putOverlay();
-  chord = new P2PConnectionsDiagram();  
+  chord = new P2PConnectionsDiagram();
   chord.setupDiagram(false);
   var dialog = $("#connection-graph");
   var diagram = $("#chord-diagram");
@@ -385,7 +385,7 @@ function showConnectionGraph() {
           'visibility': "visible"
   });
   dialog.append('<div id="close" class="close" onclick="funcClose(this);">X</div>');
-} 
+}
 
 
 function selectMocker() {
@@ -418,10 +418,10 @@ function showSelectDialog() {
       var td = $(document.createElement('td'));
       td.attr("id",k);
       td.click(function() { selectMockerBackend($(this).attr("id"));});
-      td.append(v); 
+      td.append(v);
       tr.append(td);
       table.append(tr);
-    }) 
+    })
     dframe.append(table);
     var dialog = $("#select-mocker");
     dialog.append(dframe);
@@ -456,7 +456,7 @@ function updateVisualisationWithClass(graph) {
   //console.log("Updating visualization with new graph");
   var evtCopy = $.extend(true, {}, graph);
   eventHistory.push({timestamp:$("#time-elapsed").text(), content: evtCopy});
-  
+
   if ($("#showlogs").is(":checked")) {
     var objs = [graph.add, graph.remove, graph.message];
     var act  = [ "ADD", "REMOVE", "MESSAGE" ];
@@ -466,16 +466,47 @@ function updateVisualisationWithClass(graph) {
         var str = act[i] + " - " + obj.group + " Control: " + obj.control + " - " + obj.data.id + "</br>";
         $("#log-console").append(str);
       }
-    } 
+    }
   }
 
   var elem = document.getElementById('output-window');
   elem.scrollTop = elem.scrollHeight;
-
+console.log(graph.length)
   self.visualisation.updateVisualisation(graph);
 };
 
 
 function showMenu() {
   $('menu').show();
+}
+
+function loadExistingConnections() {
+  $.get(BACKEND_URL).then(
+    function(d) {
+      console.log("loadExistingConnections cons " );
+      var graph = {
+        newNodes: [],
+        newLinks: [],
+        removeNodes: [],
+        removeLinks: [],
+        message: []
+      };
+      for (var i=0; i<d.conns.length; i++) {
+      var el = {
+
+          distance: 9 - (d.conns[i].distance / 10),
+          id:     d.conns[i].one + "-" + d.conns[i].other,
+          source: d.conns[i].one,
+          target: d.conns[i].other,
+          control: d.conns[i].control
+        };
+
+        console.log("add cons");
+        graph.newLinks.push(el);
+    }
+      updateVisualisationWithClass(graph);
+    },
+    function(d) {
+      console.log("Error getting nodes list from backend");
+    });
 }
