@@ -43,26 +43,13 @@
         <div class="title">
           P2P Network Connectivity Graph
         </div>
-        <!-- Currently disabled
-        <div class="menu" onclick="showMenu()">
-          <div class="bar1"></div>
-          <div class="bar2"></div>
-          <div class="bar3"></div>
-        </div>
-        -->
       </header>
-        <!-- Currently disabled
-      <menu>
-       <ul class="mainmenu">
-          <li id="selectmocker" class="menuitem">Select Mocker</li>
-       </ul>  
-      </menu> 
-        -->
       <div id="sidebar" class=sidebar>
         <div class="controls">
           <i id="power" class="fa fa-power-off power-off" aria-hidden="true"><div class="control-label">Power</div></i>
           <i id="start" class="invisible fa fa-play" aria-hidden="true"><div class="control-label">Start</div></i>
           <i id="stop" class="invisible fa fa-stop" aria-hidden="true"><div class="control-label">Stop</div></i>
+          <i id="freeze" class="invisible fa fa-snowflake-o" aria-hidden="true"><div class="control-label">Freeze</div></i>
           <i id="upload" class="invisible fa fa-upload" aria-hidden="true"><div class="control-label">Upload snapshot</div></i>
           <i id="snapshot" class="invisible fa fa-camera-retro" aria-hidden="true"><div class="control-label">Take snapshot</div></i>
           <i id="play" class="invisible fa fa-play-circle" aria-hidden="true"><div class="control-label">Replay last run</div></i>
@@ -72,9 +59,6 @@
           <div class="display">
             <div class="elapsed">Time elapsed: <span id="time-elapsed">00:00:00</span></div>
             <div class="label">
-              <!--
-              Selected simulation: <div id="selected-simulation"></div>
-              -->
             </div>
           </div>
           <i id="visualisation-options" class="fa fa-cog" aria-hidden="true"><div class="control-label">Settings</div></i>
@@ -88,6 +72,15 @@
           </div>
 
           <div class="control-options hidden">
+            <label for="node-count">Number of nodes for simulation</label>
+            <input id="node-count" min="5" max="1000" width="5" type="number" class="" name="node-count" value="30">
+            <br/>
+            <br/>
+            <label for="mocker-type">Mocker Type</label>
+            <select class="sim-options" id="mocker-type-selector">
+            </select> 
+            <br/>
+            <br/>
             <label for="showlog">Enable log console</label>
             <label>
                   <input type="checkbox" id="showlogs" name="showlogs" value="true">

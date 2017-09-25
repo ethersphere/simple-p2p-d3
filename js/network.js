@@ -1,5 +1,4 @@
 var BACKEND_URL='http://localhost:8888';
-var NODE_SIMULATOR='http://localhost:8889';
 
 var m = 0;
 var s = 0;
@@ -45,6 +44,8 @@ var operation             = "";
 var initialized           = false;
 
 var snapshotMode          = false; 
+
+var frozen                = false;
 
 const HIGHLIGHT_LINK_COLOR  = 0x07C288;
 const NORMAL_LINK_COLOR     = 0xf0f0f0;
@@ -165,6 +166,28 @@ function handleEvent(event) {
     }
     eventCounter++;
     update3DGraph();
+}
+
+function toggleFreeze() {
+  $("#freeze").toggleClass("power-off");
+  frozen = !frozen;
+  let ori = $("#3d-graph");
+  if (frozen) {
+    ori.css("visibility", "hidden");
+    var clone = $("<div id='frozen'></div>");
+    ori.parent().append(clone);
+    var clonedData = $.extend(true,{},graphData);  
+    var cloneGraph = ForceGraph3D()
+                (document.getElementById("frozen"))
+                .graphData(clonedData);
+    clone.find("canvas").css("position","absolute");
+    clone.find("canvas").css("top","0");
+    cloneGraph.onNodeClick(nodeSelected);
+    cloneGraph.cooldownTime(0);
+  } else {
+    $("#frozen").remove();
+    ori.css("visibility","visible");
+  }
 }
 
 function setupFilterOptions() {
@@ -339,7 +362,7 @@ function startViz(){
     console.log("Snapsshot mode; not starting node simulator");
     return;
   }
-  $.get(NODE_SIMULATOR + "/runSim").then(
+  $.post(BACKEND_URL + "/mocker/start",{"node-count": $("#node-count").val(), "mocker-type":$("#mocker-type-selector").val()}).then(
     function(d) {
       startTimer();
       $(".display .label").text("Simulation running");
@@ -349,6 +372,7 @@ function startViz(){
       $("#power").addClass("power-on");
       $("#power").prop("disabled", true);
       $("#stop").removeClass("invisible");
+      $("#freeze").removeClass("invisible");
       $("#start").addClass("invisible");
       $("#upload").addClass("invisible");
       $("#snapshot").removeClass("invisible");
@@ -380,6 +404,21 @@ function initializeServer(){
       console.log("Error connecting to backend at: " + BACKEND_URL);
       console.log(e);
     });
+  $.get(BACKEND_URL + "/mocker").then(
+    function(d){
+      let mockerlist = d;
+      for (let i=0;i<mockerlist.length; i++) {
+        let option = $('<option id="' + mockerlist[i] + '" value="' + mockerlist[i] + '">' + mockerlist[i] + '</option>');
+        if (mockerlist[i] == "probabilistic") {
+          option.attr("selected","selected");
+        } 
+        $("#mocker-type-selector").append(option);
+      } 
+    },
+    function(e,s,err) {
+      console.log("error getting mocker list");
+      console.log(e);
+    });
 };
 
 function startSim() {
@@ -396,15 +435,17 @@ function stopNetwork() {
   $("#power").addClass("stale");
   
   $.post(BACKEND_URL + "/reset");
-  $.get(NODE_SIMULATOR + "/stopSim").then(
+  $.post(BACKEND_URL + "/mocker/stop").then(
     function(d) {
       eventSource.close();
       clearInterval(clockId);
       resetTimer();
       resetVisualisation();
+      $("#search-node").addClass("invisible");
       $("#stop").addClass("invisible");
       $("#stop").removeClass("stale");
       $("#snapshot").addClass("invisible");
+      $("#freeze").addClass("invisible");
       $("#show-conn-graph").removeClass("invisible");
       $(".display .label").text("Simulation stopped. Network deleted.");
       $("#rec_messages").attr("disabled",false);

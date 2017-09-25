@@ -172,7 +172,7 @@ class P2Pd3Sidebar {
 }
 
 function findNode() {
-  $(".sm-dialog").show("slow");
+  $(".sm-dialog").toggle("slow");
 }
 
 function getNodeById() {

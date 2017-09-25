@@ -39,6 +39,10 @@ $(document).ready(function() {
     startSim();
   });
 
+  $("#freeze").click(function() {
+    toggleFreeze();
+  });
+
   $("#refresh").click(function() {
     replayViz();
   });
